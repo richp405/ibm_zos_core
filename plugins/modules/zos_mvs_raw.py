@@ -269,47 +269,87 @@ options:
                         sample: *, A
             dd_uss:
                 description:
+                    - Specify the input source - uss file information.
                 required: false
                 type: dict
-                suboptions:  
+                suboptions: 
                     dd_name:
                         description: The dd name. 
                         required: true
                         type: str
                     path:
-                        description:
+                        description: 
+                            - Specify the path to an existing uss file.
+                            - Or specify the path to an new created uss file when the path_status_group is OCREAT. 
+                        required: False
                         type: str
+                        samples: /usr/applics/hello.jcl
                     path_disposition_normal:
+                        description:
+                            - This option tells the system what to do with the uss file after normal termination of 
+                              the program.
+                        type: str
+                        required: false
                         choice:
                             - keep
                             - delete
                     path_disposition_abnormal
+                        description:
+                            - This option tells the system what to do with the uss file after abnormal termination of 
+                              the program.
+                        type: str
+                        required: false
                         choice:
                             - keep
                             - delete
                     path_mode:
-                        description: Note to dev, we will leave these posix terms ie SISGID 
-                                 Can be any of these, we need to document this:
-                                 SIRUSR,SIWUSR,SIXUSR,SIRWXU,SIRGRP,SIWGRP,SIXGRP,SIRWXG,SIROTH,SIWOTH,SIXOTH,SIRWXO,SISUID,SISGID
-                        type:list 
+                        description: 
+                            - Specify the file access attributes when the uss file is created named on the path option. 
+                        type:list
+                        elements: str
+                        choices:
+                            - SIRUSR
+                            - SIWUSR
+                            - SIXUSR
+                            - SIRWXU
+                            - SIRGRP
+                            - SIWGRP
+                            - SIXGRP
+                            - SIRWXG
+                            - SIROTH
+                            - SIWOTH
+                            - SIXOTH
+                            - SIRWXO
+                            - SISUID
+                            - SISGID
+                        samples: SIRWXU,SIRGRP (This means that the file owner can read, write, and search or execute 
+                                 the file and that users in the file group can read the file.)     
                     path_access_group:
-                        description: choose one and then set path_status_group.
+                        description: 
+                            - Specify the access attribute for the uss file named in the path option.
+                        type: str
                         choice:
                             read_only
                             write_only
                             read_write
                     path_status_group:
-                        description: You can choose up to 6 of these options (OAPPEND,OCREAT,OEXCL,ONOCTTY,ONONBLOCK,OSYNC,OTRUNC)
-                                 //todo: rename the OAPPEND ...OTRUNC to description options
-                        type: list [str]
+                        description: 
+                            - Specify the status for the uss file named in the path option.
+                            - You can choose up to 6 of these options: 
+                              OAPPEND, OCREAT, OEXCL, ONOCTTY, ONONBLOCK, OSYNC, OTRUNC, 
+                        type: list
+                        elements: str
                     file_data:
+                        description: 
+                            - The type of data for the file specified in path option.
+                        type: str
                         choice:
                             - binary
                             - text 
                             - record
                     return_content:
                         description:
-            	            - Specify whether return the dd_dataset content.
+            	            - Specify whether return the dd_uss content.
             	            - None means do not return content.
             	            - Text means return value in ASCII, converted from ebcdic. 
             	            - base64 means in binary mode. 
@@ -341,7 +381,7 @@ options:
                             - LINE 3
                     return_content:
                         description:
-            	            - Specify whether return the dd_dataset content.
+            	            - Specify whether return the dd_input content.
             	            - None means do not return content.
             	            - Text means return value in ASCII, converted from ebcdic. 
             	            - base64 means in binary mode.
