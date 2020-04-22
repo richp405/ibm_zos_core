@@ -66,12 +66,14 @@ def job_output(module, job_id=None, owner=None, job_name=None, dd_name=None):
     for job in job_detail_json.get("jobs"):
         job["ret_code"] = {} if job.get("ret_code") is None else job.get("ret_code")
         job["ret_code"]["code"] = _get_return_code_num(
-            job.get("ret_code", {}).get("msg", "")
+            job.get("ret_code").get("msg", "")
         )
         job["ret_code"]["msg_code"] = _get_return_code_str(
-            job.get("ret_code", {}).get("msg", "")
+            job.get("ret_code").get("msg", "")
         )
         job["ret_code"]["msg_txt"] = ""
+        if job.get("ret_code").get("msg", "") == "":
+            job["ret_code"]["msg"] = "AC"
     return job_detail_json
 
 
