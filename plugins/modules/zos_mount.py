@@ -519,28 +519,28 @@ def run_module(module, arg_def):
             automove = automove,
             automove_list = automove_list,
             cmd = 'not built',
-            changed = changed
+            changed = changed,
             unmount_extension = unmount_extension
         )
     )
 
-# file_system to be mounted must exist, unless this is an unmount
-    if( !unmount ):
-        fs_du = data_set.DataSetUtils(file_system)
-        fs_exists = fs_du.exists()
-        if( !fs_exists):
-            module.fail_json (
-                msg = "Mount source (" + file_system + ") doesn't exist",
-                res_args
-            )
-
-# Validate mountpoint exists
-    mp_exists = os.path.exists(mount_point)
-    if( !mp_exists):
+# file_system to be mounted must exist
+    fs_du = data_set.DataSetUtils(file_system)
+    fs_exists = fs_du.exists()
+    if( !fs_exists):
         module.fail_json (
-            msg = "Mount destination (" + mount_point + ") doesn't exist",
+            msg = "Mount source (" + file_system + ") doesn't exist",
             res_args
         )
+
+# Validate mountpoint exists if mounting
+    if( !unmount ):
+        mp_exists = os.path.exists(mount_point)
+        if( !mp_exists):
+            module.fail_json (
+                msg = "Mount destination (" + mount_point + ") doesn't exist",
+                res_args
+            )
 
 # Need to see if mountpoint is in use for idempotence (how?)
 ## df | grep file_system will do the trick
@@ -605,58 +605,43 @@ def run_module(module, arg_def):
 
     conv_path = None
     src_ds_vol = None
+    comment = ''
 
     if( unmount ):
         if( currently_mounted ):
             changed = True
+        else:
+            comment = 'Unmount called on data set that is not mounted.'
     else:
         if( !currently_mounted ):
             changed = True
+        else:
+            comment = 'Mount called on data set that is already mounted.'
+
+    rc = -1
+    stdout = stderr = None
 
     if( changed ):  ## got something to do
         if( !module.check_mode ):
-            ### do the thing
-
+            try:
+                rc, stdout, stderr = module.run_command( fullcommand )
+            except Exception as err:
+                module.fail_json(msg=str(err),res_args)
+        else:
+            comment = comment + 'NO Action taken: ANSIBLE CHECK MODE'
 
     res_args.update(
         dict(
-            changed = changed
+            changed = changed,
+            comment = comment,
+            cmd = fullcmd,
+            rc = rc,
+            stdout = stdout,
+            stderr = stderr
         )
     )
 
-    # ********************************************************************
-    # 1. Use DataSetUtils to determine the src and dest data set type.
-    # 2. For source data sets, find its volume, which will be used later.
-    # ********************************************************************
-    try:
-        if is_uss:
-            dest_ds_type = "USS"
-            dest_exists = os.path.exists(dest)
-        else:
-            dest_du = data_set.DataSetUtils(dest_name)
-            dest_exists = dest_du.exists()
-            if copy_member:
-                dest_exists = dest_exists and dest_du.member_exists(dest_member)
-            dest_ds_type = dest_du.ds_type()
-        if temp_path or '/' in src:
-            src_ds_type = "USS"
-        else:
-            src_du = data_set.DataSetUtils(src_name)
-            if src_du.exists():
-                if src_member and not src_du.member_exists(member_name):
-                    raise NonExistentSourceError(src)
-                src_ds_type = src_du.ds_type()
-                src_ds_vol = src_du.volume()
-            else:
-                raise NonExistentSourceError(src)
-
-    except Exception as err:
-        module.fail_json(msg=str(err),res_args)
-
-
-## this is the key return pile
-
-    return res_args, temp_path, conv_path
+    return res_args
 
 ###############################################################################
 ######################### Main                     ############################
@@ -703,8 +688,8 @@ def main():
     )
 
     try:
-        res_args = temp_path = conv_path = None
-        res_args, temp_path, conv_path = run_module(module, arg_def)
+        res_args = None
+        res_args = run_module(module, arg_def)
         module.exit_json(**res_args)
     finally:
         pass
