@@ -8,14 +8,16 @@ from __future__ import (absolute_import, division, print_function)
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    'metadata_version': '1.1',
+    'status': ['preview'],
+    'supported_by': 'community',
+}
 
 DOCUMENTATION = r"""
 ---
 module: zos_mount
-author: 
+author:
     - "Rich Parker (@richp405)"
 short_description: Mount a filesystem for Unix System Services (USS)
 description:
@@ -23,7 +25,7 @@ description:
   - Mountable file needs a valid, unique Fully Qualified Name.
   - Target folder will be created and/or unmounted if needed
 options:
-    path: 
+    path:
         description:
             - The absolute path name onto which the file system is to be mounted
             - The path is case sensitive, and < 1023 characters long
@@ -34,17 +36,17 @@ options:
             - The file in zos that is to be mounted
         type: str
         required: True
-    fstype: 
+    fstype:
         description:
             - The type of file system that will perform the logical mount request.
             - The system converts the TYPE operand value to uppercase letters.
             - The value can be up to 8 characters long.
         type: str
         choices:
-            - HFS for a hierarchical file system (HFS).
-            - zFS for a z/OS File System (zFS).
-            - NFS for accessing remote files.
-            - TFS for a temporary file system (TFS).
+            - HFS
+            - zFS
+            - NFS
+            - TFS
         required: True
     state:
         description:
@@ -89,10 +91,11 @@ options:
     tabcomment:
         description:
             - If provided, this is used in markers around the fstab entry
+            - Only the first 21 characters are copied
         type: str
         required: False
     unmount_opts:
-        description: 
+        description:
             - Describes how the unmount is to be performed
         type: str
         choices:
@@ -110,10 +113,10 @@ options:
             - If I(ro) on a mounted/remount, mount is performed read-only.
             - If I(same) and (unmount_opts=REMOUNT), mount is opened is same mode as previously.
             - If I(nowait), mount is performed asynchronously.
-            - If I(nosecurity), Security checks are not enforced for files in this file system. 
+            - If I(nosecurity), Security checks are not enforced for files in this file system.
         type: str
         choices:
-            - ro 
+            - ro
             - rw
             - same
             - nowait
@@ -122,18 +125,17 @@ options:
         default: rw
     src_params:
         description:
-            - Specifies a parameter string to be passed to the file system type. 
-            - The parameter format and content are specified by the file system type. 
-        type: string
+            - Specifies a parameter string to be passed to the file system type.
+            - The parameter format and content are specified by the file system type.
+        type: str
         required: False
-        default: None
     tag_flag:
         description:
             - If present, tags get written to any untagged file
             - When the file system is unmounted, the tags are lost.
-            - If I(False) NOTEXT none of the untagged files in the file system are 
+            - If I(False) NOTEXT none of the untagged files in the file system are
                   automatically converted during file reading and writing.
-            - If I(True) TEXT each untagged file is implicitly marked as 
+            - If I(True) TEXT each untagged file is implicitly marked as
                   containing pure text data that can be converted.
             - If this flag is used, use of tag_ccsid is encouraged.
         type: str
@@ -141,36 +143,34 @@ options:
             - TEXT
             - NOTEXT
         required: False
-        default: None
     tag_ccsid:
         description:
             - CCSID for untagged files in the mounted file system
             - only required it tag_flag is present
             - ccsid
-                - Identifies the coded character set identifier to be implicitly 
+                - Identifies the coded character set identifier to be implicitly
                   set for the untagged file. ccsid is specified as a decimal value
                   from 0 to 65535. However, when TEXT is specified, the value must
                   be between 0 and 65535. Other than this, the value is not
-                  checked as being valid and the corresponding code page is not 
+                  checked as being valid and the corresponding code page is not
                   checked as being installed.
-        type: numeric value 0-65535
+        type: int
         required: False
-        default: None
     allow_uids:
         description:
             - >
-            Specifies whether the SETUID and SETGID mode bits on executables in 
-            this file system are considered. Also determines whether the APF 
-            extended attribute or the Program Control extended attribute is 
-            honored.
+              Specifies whether the SETUID and SETGID mode bits on executables in
+              this file system are considered. Also determines whether the APF
+              extended attribute or the Program Control extended attribute is
+              honored.
             - >
-              If I(True) the SETUID and SETGID mode bits are considered when a 
+              If I(True) the SETUID and SETGID mode bits are considered when a
               program in this file system is run. SETUID is the default.
             - >
               If I(False) the SETUID and SETGID mode bits are ignored when a
-              program in this file system is run. The program runs as though the 
-              SETUID and SETGID mode bits were not set. Also, if you specify the 
-              NOSETUID option on MOUNT, the APF extended attribute and the Program Control 
+              program in this file system is run. The program runs as though the
+              SETUID and SETGID mode bits were not set. Also, if you specify the
+              NOSETUID option on MOUNT, the APF extended attribute and the Program Control
               Bit values are ignored.
         type: bool
         required: False
@@ -178,34 +178,33 @@ options:
     sysname:
         description:
             - >
-              For systems participating in shared file system, SYSNAME specifies 
-              the particular system on which a mount should be performed. This 
-              system will then become the owner of the file system mounted. This 
+              For systems participating in shared file system, SYSNAME specifies
+              the particular system on which a mount should be performed. This
+              system will then become the owner of the file system mounted. This
               system must be IPLed with SYSPLEX(YES).
             - >
-              IBM® recommends that you omit the SYSNAME parameter or specify 
+              IBM® recommends that you omit the SYSNAME parameter or specify
               system_name where system_name is the name of this system.
             - >
-              sysname is a 1–8 alphanumeric name of a system participating in shared file system. 
-        type: string
+              sysname is a 1–8 alphanumeric name of a system participating in shared file system.
+        type: str
         required: False
-        default: None
     automove:
         description:
             - >
-              These parameters apply only in a sysplex where systems are exploiting 
-              the shared file system capability. They specify what is to happens to 
-              the ownership of a file system when a shutdown, PFS termination, dead 
-              system takeover, or file system move occurs. The default setting is 
-              AUTOMOVE where the file system will be randomly moved to another system 
+              These parameters apply only in a sysplex where systems are exploiting
+              the shared file system capability. They specify what is to happens to
+              the ownership of a file system when a shutdown, PFS termination, dead
+              system takeover, or file system move occurs. The default setting is
+              AUTOMOVE where the file system will be randomly moved to another system
               (no system list used).
             - >
-              I(AUTOMOVE) indicates that ownership of the file system can be 
-              automatically moved to another system participating in a shared file system. 
+              I(AUTOMOVE) indicates that ownership of the file system can be
+              automatically moved to another system participating in a shared file system.
             - >
               I(NOAUTOMOVE) prevents movement of the file system's ownership in some situations.
             - >
-              I(UNMOUNT) allows the file system to be unmounted in some situations. 
+              I(UNMOUNT) allows the file system to be unmounted in some situations.
         type: str
         choices:
             - AUTOMOVE
@@ -215,14 +214,16 @@ options:
         default: AUTOMOVE
     automove_list:
         description:
-            - If(automove=AUTOMOVE), this option will be checked
-            - This specifies the list of servers to include or exclude as destinations
-            - None is a valid value, meaning 'move anywhere'
-            - Indicator is either INCLUDE or EXCLUDE, which can also be abbreviated as I or E
+            - >
+              If(automove=AUTOMOVE), this option will be checked
+            - >
+              This specifies the list of servers to include or exclude as destinations
+            - >
+              None is a valid value, meaning 'move anywhere'
+            - >
+              Indicator is either INCLUDE or EXCLUDE, which can also be abbreviated as I or E
         type: str
-        default: AUTOMOVE
         required: False
-
 """
 
 EXAMPLES = r"""
@@ -314,7 +315,7 @@ EXAMPLES = r"""
 """
 
 RETURN = r"""
-path: 
+path:
     description: The absolute path name onto which the file system is to be mounted
     returned: always
     type: str
@@ -324,7 +325,7 @@ src:
     returned: always
     type: str
     sample: SOMEUSER.VVV.ZFS
-fstype: 
+fstype:
     description: The type of file system that will perform the logical mount request.
     returned: always
     type: str
@@ -336,16 +337,19 @@ state:
     sample: mounted
 fstab:
     description: This is the full qualified name of the dataset member to change
+    returned: always
     type: str
     sample: SYS1.FILESYS(BPXPRMAA)
 backup:
     description: This is the name of the dataset member to copy fstab to before alteration
+    returned: always
     type: str
     sample: SYS1.FILESYS(BPXPRMAB)
 tabcomment:
     description: The text that was used in markers around the fstab entry
+    returned: always
     type: str
-    required: False
+    sample: I did this because
 unmount_opts:
     description: Describes how the unmount it to be performed
     returned: changed and if state=unmounted
@@ -357,7 +361,7 @@ opts:
     type: str
     sample: rw,nosecurity
 src_params:
-    description: Specifies a parameter string to be passed to the file system type. 
+    description: Specifies a parameter string to be passed to the file system type.
     returned: whenever non-None
     type: str
     sample: D(101)
@@ -369,7 +373,7 @@ tag_flag:
 tag_ccsid:
     description: CCSID for untagged files in the mounted file system
     returned: when tag_flag is defined
-    type: numeric value 0-65535
+    type: int
     sample: 819
 allow_uids:
     description: Whether the SETUID and SETGID mode bits on executables in this file system are considered.
@@ -382,7 +386,7 @@ sysname:
     type: str
     sample: MVSSYS01
 automove:
-    description: 
+    description:
         - >
           Specifies what is to happens to the ownership of a file system during
           a shutdown, PFS termination, dead system takeover, or file system move occurs.
@@ -390,7 +394,7 @@ automove:
     type: str
     sample: AUTOMOVE
 automove_list:
-    description:: This specifies the list of servers to include or exclude as destinations.
+    description: This specifies the list of servers to include or exclude as destinations.
     returned: if Non-None
     type: str
     sample: I,SERV01,SERV02,SERV03,SERV04
@@ -428,39 +432,35 @@ rc:
     description: The return code of the mount command, if applicable.
     returned: failure
     type: int
-    sample: 8  
+    sample: 8
 
 """
-
-import os
-import math
-import stat
-import shutil
-import glob
-import time
-import re
-from datetime import datetime
-
-from pathlib import Path
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.ibm.ibm_zos_core.plugins.module_utils.ansible_module import (
-    AnsibleModuleHelper,
+from ansible_collections.ibm.ibm_zos_core.plugins.module_utils.import_handler import (
+    MissingZOAUImport,
 )
-
 from ansible_collections.ibm.ibm_zos_core.plugins.module_utils import (
     better_arg_parser,
     data_set,
     encode,
     vtoc,
-#    backup,
+    #    backup,
     copy,
     mvs_cmd,
 )
-
-from ansible_collections.ibm.ibm_zos_core.plugins.module_utils.import_handler import (
-    MissingZOAUImport,
+from ansible_collections.ibm.ibm_zos_core.plugins.module_utils.ansible_module import (
+    AnsibleModuleHelper,
 )
+from ansible.module_utils.basic import AnsibleModule
+from pathlib import Path
+from datetime import datetime
+import re
+import time
+import glob
+import shutil
+import stat
+import math
+import os
+
 
 try:
     from zoautil_py import Datasets, MVSCmd, types
@@ -473,14 +473,22 @@ except Exception:
 def cleanup(src_list):
     pass
 
-def swap_text(original, adding, removing ):
-    content_lines = original.split('\n')
+
+def swap_text(original, adding, removing):
+    """
+    swap_text returns original after removing blocks matching removing,
+    and adding the adding param
+    original now should be a list of lines without newlines
+    return is the consolidated file value
+    """
+    # content_lines = original.split('\n')
+    content_lines = original
 
     remove_starting_at_index = None
     remove_ending_at_index = None
 
     ms = re.compile(r"^\s*MOUNT\s+FILESYSTEM\('" + removing.upper() + r"'\)")
-    print( ms)
+    print(ms)
     boneyard = dict()
 
     for index, line in enumerate(content_lines):
@@ -497,10 +505,10 @@ def swap_text(original, adding, removing ):
             else:
                 doit = True
             if doit:
-                if content_lines[remove_starting_at_index-1][0:6] == '/* VVV':
+                if content_lines[remove_starting_at_index - 1][0:6] == '/* VVV':
                     remove_starting_at_index -= 1
                     if remove_starting_at_index > 0:
-                        if len(content_lines[remove_starting_at_index-1]) < 1:
+                        if len(content_lines[remove_starting_at_index - 1]) < 1:
                             remove_starting_at_index -= 1
 
                 boneyard[remove_starting_at_index] = remove_ending_at_index
@@ -510,10 +518,10 @@ def swap_text(original, adding, removing ):
     if remove_starting_at_index is not None:
         if remove_ending_at_index is not None:
             if remove_starting_at_index != remove_ending_at_index:
-                if content_lines[remove_starting_at_index-1][0:6] == '/* VVV':
+                if content_lines[remove_starting_at_index - 1][0:6] == '/* VVV':
                     remove_starting_at_index -= 1
                 if remove_starting_at_index > 0:
-                    if len(content_lines[remove_starting_at_index-1]) < 1:
+                    if len(content_lines[remove_starting_at_index - 1]) < 1:
                         remove_starting_at_index -= 1
                 boneyard[remove_starting_at_index] = remove_ending_at_index
 
@@ -521,14 +529,15 @@ def swap_text(original, adding, removing ):
         endidx = boneyard[startidx]
         del(content_lines[startidx:endidx])
 
-    if( len(adding) > 0 ):
+    if(len(adding) > 0):
         content_lines.extend(adding.split('\n'))
 
     return "\n".join(content_lines)
 
-###############################################################################
-################ run_module: code for zos_mount module ########################
-###############################################################################
+# #############################################################################
+# ############## run_module: code for zos_mount module ########################
+# #############################################################################
+
 
 def run_module(module, arg_def):
     # ********************************************************************
@@ -541,7 +550,7 @@ def run_module(module, arg_def):
         parsed_args = parser.parse_args(module.params)
     except ValueError as err:
         module.fail_json(
-            msg="Parameter verification failed", 
+            msg="Parameter verification failed",
             stderr=str(err)
         )
     changed = False
@@ -565,159 +574,166 @@ def run_module(module, arg_def):
     automove_list = parsed_args.get('automove_list')
 
     write_fstab = False
-    if( 'mounted' in state or 'present' in state or 'absent' in state):
-        if( len(fstab) > 0 ):
+    if('mounted' in state or 'present' in state or 'absent' in state):
+        if(len(fstab) > 0):
             write_fstab = True
 
     gonna_mount = True
-    if( 'unmounted' in state or 'absent' in state):
+    if('unmounted' in state or 'absent' in state):
         gonna_mount = False
 
     gonna_unmount = False
-    if( 'unmounted' in state or 'remounted' in state or 'absent' in state):
+    if('unmounted' in state or 'remounted' in state or 'absent' in state):
         gonna_unmount = True
 
     res_args.update(
         dict(
-            src = src,
-            path = path,
-            fstype = fstype,
-            state = state,
-            fstab = fstab,
-            backup = backup,
-            tabcomment = tabcomment,
-            unmount_opts = unmount_opts,
-            opts = opts,
-            src_params = src_params,
-            tag_flag = tag_flag,
-            tag_ccsid = tag_ccsid,
-            allow_uids = allow_uids,
-            sysname = sysname,
-            automove = automove,
-            automove_list = automove_list,
-            cmd = 'not built',
-            changed = changed,
-            comment = 'starting',
-            rc = 0,
-            stdout = '',
-            stderr = ''
+            src=src,
+            path=path,
+            fstype=fstype,
+            state=state,
+            fstab=fstab,
+            backup=backup,
+            tabcomment=tabcomment,
+            unmount_opts=unmount_opts,
+            opts=opts,
+            src_params=src_params,
+            tag_flag=tag_flag,
+            tag_ccsid=tag_ccsid,
+            allow_uids=allow_uids,
+            sysname=sysname,
+            automove=automove,
+            automove_list=automove_list,
+            cmd='not built',
+            changed=changed,
+            comment='starting',
+            rc=0,
+            stdout='',
+            stderr=''
         )
     )
 
 # data set to be mounted/unmounted must exist
     fs_du = data_set.DataSetUtils(src)
     fs_exists = fs_du.exists()
-    if( fs_exists == False):
-        module.fail_json (
-            msg = "Mount source (" + src + ") doesn't exist",
-            stderr = str(res_args)
+    if fs_exists is False:
+        module.fail_json(
+            msg="Mount source (" + src + ") doesn't exist",
+            stderr=str(res_args)
         )
 
 # Validate mountpoint exists if mounting
-    if( gonna_mount ):
+    if gonna_mount:
         mp_exists = os.path.exists(path)
-        if( mp_exists == False ):
-            os.mkdir( path )
+        if mp_exists is False:
+            os.mkdir(path)
         mp_exists = os.path.exists(path)
-        if( mp_exists == False ):
-            module.fail_json (
-                msg = "Mount destination (" + path + ") doesn't exist",
-                stderr = str(res_args)
+        if mp_exists is False:
+            module.fail_json(
+                msg="Mount destination (" + path + ") doesn't exist",
+                stderr=str(res_args)
             )
 
-# Need to see if mountpoint is in use for idempotence 
+# Need to see if mountpoint is in use for idempotence
     currently_mounted = False
-    rc, stdout, stderr = module.run_command( 'df | grep ' + src + ' | wc -m',use_unsafe_shell=True )
+    rc, stdout, stderr = module.run_command(
+        'df | grep ' + src + ' | wc -m', use_unsafe_shell=True)
     if rc != 0:
-        module.fail_json (
-            msg = "Checking for source (" + src +") failed with error",
-            stderr = str(res_args)
+        module.fail_json(
+            msg="Checking for source (" + src + ") failed with error",
+            stderr=str(res_args)
         )
     tmpint = int(stdout)
-    if tmpint != 0:	    ## zero bytes means not found
+    if tmpint != 0:  # zero bytes means not found
         currently_mounted = True
 
 
 # can type be validated?
 
-    ############################################
-    # Assemble the mount command 
+    # ##########################################
+    # Assemble the mount command
 
     parmtext = '/* VVV zos_mount VVV '
-    if( len(tabcomment) > 2 ):
+    if(len(tabcomment) > 2):
         parmtext = parmtext + tabcomment[:21]
     d = datetime.today()
     parmtext = parmtext + d.ctime()[4:] + " VVV */\n"
-    parmtail = "\n" + parmtext.replace( 'V', 'A')
+    parmtail = "\n" + parmtext.replace('V', 'A')
 
     fullcmd = ''
     fullumcmd = ''
 
-    if( gonna_mount ):
-        fullcmd = "tsocmd MOUNT FILESYSTEM\\( \\'{0}\\' \\) MOUNTPOINT\\( \\'{1}\\' \\) TYPE\\( '{2}' \\)".format( src, path, fstype )
-        parmtext = parmtext + "MOUNT FILESYSTEM('{0}')\n      MOUNTPOINT('{1}')\n      TYPE('{2}')".format( src, path, fstype )
-        if( 'ro' in opts or 'RO' in opts ):
+    if gonna_mount:
+        fullcmd = "tsocmd MOUNT FILESYSTEM\\( \\'{0}\\' \\) MOUNTPOINT\\( \\'{1}\\' \\) TYPE\\( '{2}' \\)".format(
+            src, path, fstype)
+        parmtext = parmtext + \
+            "MOUNT FILESYSTEM('{0}')\n      MOUNTPOINT('{1}')\n      TYPE('{2}')".format(
+                src, path, fstype)
+        if 'ro' in opts or 'RO' in opts:
             subcmd = 'READ'
         else:
             subcmd = 'RDWR'
         fullcmd = "{0} MODE\\({1}\\)".format(fullcmd, subcmd)
         parmtext = "{0}\n      MODE({1})".format(parmtext, subcmd)
-        
-        if( len(src_params) > 1 ):
-            fullcmd = "{0} PARM\\(\\'{1}\\'\\)".format(fullcmd, src_params )
-            parmtext = "{0}\n      PARM('{1}')".format(parmtext, src_params )
 
-        if( len(tag_flag) > 0):
-            fullcmd = "{0} TAG\\({1},{2}\\)".format(fullcmd, tag_flag, tag_ccsid)
-            parmtext = "{0}\n      TAG({1},{2})".format(parmtext, tag_flag, tag_ccsid)
+        if len(src_params) > 1:
+            fullcmd = "{0} PARM\\(\\'{1}\\'\\)".format(fullcmd, src_params)
+            parmtext = "{0}\n      PARM('{1}')".format(parmtext, src_params)
 
-        if( allow_uids ):
+        if len(tag_flag) > 0:
+            fullcmd = "{0} TAG\\({1},{2}\\)".format(
+                fullcmd, tag_flag, tag_ccsid)
+            parmtext = "{0}\n      TAG({1},{2})".format(
+                parmtext, tag_flag, tag_ccsid)
+
+        if allow_uids:
             fullcmd = fullcmd + ' SETUID'
             parmtext = parmtext + '\n      SETUID'
         else:
             fullcmd = fullcmd + ' NOSETUID'
             parmtext = parmtext + '\n      NOSETUID'
 
-        if( 'NOWAIT' in opts or 'nowait' in opts):
+        if 'NOWAIT' in opts or 'nowait' in opts:
             fullcmd = fullcmd + ' NOWAIT'
             parmtext = parmtext + '\n      NOWAIT'
         else:
             fullcmd = fullcmd + ' WAIT'
             parmtext = parmtext + '\n      WAIT'
 
-        if( 'NOSECURITY' in opts or 'nosecurity' in opts):
+        if 'NOSECURITY' in opts or 'nosecurity' in opts:
             fullcmd = fullcmd + ' NOSECURITY'
             parmtext = parmtext + '\n      NOSECURITY'
         else:
             fullcmd = fullcmd + ' SECURITY'
             parmtext = parmtext + '\n      SECURITY'
 
-        if( len(sysname) > 1 ):
+        if len(sysname) > 1:
             fullcmd = "{0} SYSNAME\\({1}\\)".format(fullcmd, sysname)
             parmtext = "{0}\n      SYSNAME({1})".format(parmtext, sysname)
 
-        if( len(automove) > 1):
+        if len(automove) > 1:
             fullcmd = fullcmd + ' ' + automove
             parmtext = parmtext + '\n      ' + automove
-            if( len(automove_list) > 1):
+            if(len(automove_list) > 1):
                 fullcmd = fullcmd + '(' + automove_list + ')'
                 parmtext = parmtext + '(' + automove_list + ')'
         parmtext = parmtext + parmtail
 
-    if( gonna_unmount):     # unmount/remount
-        fullumcmd = "tsocmd UNMOUNT FILESYSTEM\\(\\'{0}\\'\\)".format( src )
-        if( len(unmount_opts) < 2 ):
+    if gonna_unmount:     # unmount/remount
+        fullumcmd = "tsocmd UNMOUNT FILESYSTEM\\(\\'{0}\\'\\)".format(src)
+        if len(unmount_opts) < 2:
             unmount_opts = "NORMAL"
             fullumcmd = fullcmd + ' ' + unmount_opts
 
     comment = ''
 
-    if( gonna_unmount == True ):
-        if( currently_mounted ):
+    if gonna_unmount:
+        if currently_mounted:
             changed = True
-            if( module.check_mode == False):
+            if module.check_mode is False:
                 try:
-                    (rc, stdout, stderr) = module.run_command(fullumcmd, use_unsafe_shell=True)
+                    (rc, stdout, stderr) = module.run_command(
+                        fullumcmd, use_unsafe_shell=True)
                     comment += "ran unmount command\n"
                     currently_mounted = False
                 except Exception as err:
@@ -728,12 +744,13 @@ def run_module(module, arg_def):
         else:
             comment += "Unmount called on data set that is not mounted.\n"
 
-    if( gonna_mount == True ):
-        if( currently_mounted == False ):
+    if gonna_mount:
+        if currently_mounted is False:
             changed = True
-            if( module.check_mode == False):
+            if module.check_mode is False:
                 try:
-                    (rc, stdout, stderr) = module.run_command(fullcmd, use_unsafe_shell=True)
+                    (rc, stdout, stderr) = module.run_command(
+                        fullcmd, use_unsafe_shell=True)
                     comment = "ran command\n"
                 except Exception as err:
                     module.fail_json(msg=str(err), stderr=str(res_args))
@@ -746,34 +763,46 @@ def run_module(module, arg_def):
     rc = 0
     stdout = stderr = None
 
-    if( write_fstab ):
+    if write_fstab and module.check_mode is False:
         fst_du = data_set.DataSetUtils(fstab)
         fst_exists = fst_du.exists()
-        if( fst_exists == False):
-            module.fail_json (
-                msg = "fstab set member (" + fstab + ") doesn't exist",
-                stderr = str(res_args)
+        if fst_exists is False:
+            module.fail_json(
+                msg="fstab set member (" + fstab + ") doesn't exist",
+                stderr=str(res_args)
             )
 
-# OPUT WORKLOAD.TOTALS(OCT17) '/u/turbo/wkld/totals/oct17' TEXT CONVERT(YES)  (to uss)
-# OGET '/u/turbo/wkld/totals/oct17' WORKLOAD.TOTALS(OCT17) CONVERT(YES) (to zos/pdse)
-        # tsocmd OPUT fstab '/tmp/txtentry' TEXT CONVERT(YES)
-#        if len(backup)>0:
-            # tsocmd OGET '/tmp/txtentry' backup CONVERT(YES)
+        fullcmd = "cp \"//'" + fstab + "'\" /tmp/txtentry"
+        try:
+            (rc, stdout, stderr) = module.run_command(
+                fullcmd, use_unsafe_shell=True)
+        except Exception as err:
+            module.fail_json(msg=str(err), stderr=str(res_args))
 
-        fh = open('/tmp/txtentry', 'r')
-        content = fh.read(65534)
-        fh.close()
+        if len(backup) > 0:
+            fullcmd = "cp /tmp/txtentry \"//'" + backup + "'\""
+            try:
+                (rc, stdout, stderr) = module.run_command(
+                    fullcmd, use_unsafe_shell=True)
+            except Exception as err:
+                module.fail_json(msg=str(err), stderr=str(res_args))
+            comment += "Wrote backup to " + backup + "\n"
 
-#        content = "Start of fstab\nA few settings entries\nthat's all\n"
-        newtext = swap_text( content, parmtext, src)
-        if( newtext != content):
-#            comment += "Changing fstab to-----\n" + newtext + "\n------\n"
-            fh = open('/tmp/txtentry','w')
+        with open('/tmp/txtentry', 'r') as fh:
+            content = fh.read().replace('/n', '')
+
+        newtext = swap_text(content, parmtext, src)
+        if(newtext != content):
+            fh = open('/tmp/txtentry', 'w')
             fh.write(newtext)
             fh.close()
-            # tsocmd OGET '/tmp/txtentry' fstab CONVERT(YES)
-
+            fullcmd = "cp /tmp/txtentry \"//'" + fstab + "'\""
+            try:
+                (rc, stdout, stderr) = module.run_command(
+                    fullcmd, use_unsafe_shell=True)
+            except Exception as err:
+                module.fail_json(msg=str(err), stderr=str(res_args))
+            comment += "Modified " + fstab + " in place\n"
 
     res_args.update(
         dict(
@@ -788,9 +817,11 @@ def run_module(module, arg_def):
 
     return res_args
 
-###############################################################################
-######################### Main                     ############################
-###############################################################################
+# #############################################################################
+# ####################### Main                     ############################
+# #############################################################################
+
+
 def main():
     global module
 
@@ -798,19 +829,19 @@ def main():
         argument_spec=dict(
             src=dict(type='str', required=True),
             path=dict(type='str', required=True),
-            fstype=dict(type='str', required=True),
-            state=dict(type='str', default='mounted', required=False),
+            fstype=dict(type='str', choices=['HFS', 'zFS', 'NFS', 'TFS'], required=True),
+            state=dict(type='str', default='mounted', choices=['absent', 'mounted', 'unmounted', 'present', 'remounted'], required=False),
             fstab=dict(type='str', required=False),
             backup=dict(type='str', required=False),
             tabcomment=dict(type='str', required=False),
-            unmount_opts=dict(type='str', default='NORMAL', required=False),
-            opts=dict(type='str', default='rw', required=False),
+            unmount_opts=dict(type='str', default='NORMAL', choices=['DRAIN', 'FORCE', 'IMMEDIATE', 'NORMAL', 'REMOUNT', 'RESET'], required=False),
+            opts=dict(type='str', default='rw', choices=['ro', 'rw', 'same', 'nowait', 'nosecurity'], required=False),
             src_params=dict(type='str', required=False),
-            tag_flag=dict(type='str', default='', required=False),
-            tag_ccsid=dict(type='str', default='819', required=False),
+            tag_flag=dict(type='str', default='', choices=['TEXT', 'NOTEXT'], required=False),
+            tag_ccsid=dict(type='int', required=False),
             allow_uids=dict(type='bool', default=True, required=False),
             sysname=dict(type='str', required=False),
-            automove=dict(type='str', default='AUTOMOVE', required=False),
+            automove=dict(type='str', default='AUTOMOVE', choices=["AUTOMOVE", "NOAUTOMOVE", "UNMOUNT"], required=False),
             automove_list=dict(type='str', required=False)
         ),
         add_file_common_args=True,
@@ -820,19 +851,19 @@ def main():
     arg_def = dict(
         src=dict(arg_type='data_set', required=True),
         path=dict(arg_type='path', required=True),
-        fstype=dict(arg_type='str', required=True),
-        state=dict(arg_type='str', default='mounted', required=False),
+        fstype=dict(arg_type='str', choices=["HFS", "zFS", "NFS", "TFS"], required=True),
+        state=dict(arg_type='str', default='mounted', choices=['absent', 'mounted', 'unmounted', 'present', 'remounted'], required=False),
         fstab=dict(arg_type='str', default='', required=False),
         backup=dict(arg_type='str', default='', required=False),
         tabcomment=dict(arg_type='str', default='', required=False),
-        unmount_opts=dict(arg_type='str', default='NORMAL', required=False),
-        opts=dict(arg_type='str', default='rw', required=False),
+        unmount_opts=dict(arg_type='str', default='NORMAL', choices=['DRAIN', 'FORCE', 'IMMEDIATE', 'NORMAL', 'REMOUNT', 'RESET'], required=False),
+        opts=dict(arg_type='str', default='rw', choices=['ro', 'rw', 'same', 'nowait', 'nosecurity'], required=False),
         src_params=dict(arg_type='str', default='', required=False),
-        tag_flag=dict(arg_type='str', default='', required=False),
-        tag_ccsid=dict(arg_type='str', default='819', required=False),
+        tag_flag=dict(arg_type='str', default='', choices=['TEXT', 'NOTEXT'], required=False),
+        tag_ccsid=dict(arg_type='str', required=False),
         allow_uids=dict(arg_type='bool', default=True, required=False),
         sysname=dict(arg_type='str', default='', required=False),
-        automove=dict(arg_type='str', default='AUTOMOVE', required=False),
+        automove=dict(arg_type='str', default='AUTOMOVE', choices=["AUTOMOVE", "NOAUTOMOVE", "UNMOUNT"], required=False),
         automove_list=dict(arg_type='str', default='', required=False)
     )
 
