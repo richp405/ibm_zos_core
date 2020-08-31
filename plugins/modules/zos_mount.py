@@ -83,6 +83,9 @@ options:
             - If provided, this is the full qualified name of the dataset member to change
         type: str
         required: False
+        aliases:
+            - bpxfile
+            - bpxprm
     backup:
         description:
             - If provided, this is the name of the dataset member to copy fstab to before alteration
@@ -435,8 +438,18 @@ rc:
     sample: 8
 
 """
-from ansible_collections.ibm.ibm_zos_core.plugins.module_utils.import_handler import (
-    MissingZOAUImport,
+import os
+import math
+import stat
+import shutil
+import glob
+import time
+import re
+from datetime import datetime
+from pathlib import Path
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.ibm.ibm_zos_core.plugins.module_utils.ansible_module import (
+    AnsibleModuleHelper,
 )
 from ansible_collections.ibm.ibm_zos_core.plugins.module_utils import (
     better_arg_parser,
@@ -447,20 +460,9 @@ from ansible_collections.ibm.ibm_zos_core.plugins.module_utils import (
     copy,
     mvs_cmd,
 )
-from ansible_collections.ibm.ibm_zos_core.plugins.module_utils.ansible_module import (
-    AnsibleModuleHelper,
+from ansible_collections.ibm.ibm_zos_core.plugins.module_utils.import_handler import (
+    MissingZOAUImport,
 )
-from ansible.module_utils.basic import AnsibleModule
-from pathlib import Path
-from datetime import datetime
-import re
-import time
-import glob
-import shutil
-import stat
-import math
-import os
-
 
 try:
     from zoautil_py import Datasets, MVSCmd, types
@@ -829,19 +831,25 @@ def main():
         argument_spec=dict(
             src=dict(type='str', required=True),
             path=dict(type='str', required=True),
-            fstype=dict(type='str', choices=['HFS', 'zFS', 'NFS', 'TFS'], required=True),
-            state=dict(type='str', default='mounted', choices=['absent', 'mounted', 'unmounted', 'present', 'remounted'], required=False),
-            fstab=dict(type='str', required=False),
+            fstype=dict(type='str', choices=[
+                        'HFS', 'zFS', 'NFS', 'TFS'], required=True),
+            state=dict(type='str', default='mounted', choices=[
+                       'absent', 'mounted', 'unmounted', 'present', 'remounted'], required=False),
+            fstab=dict(type='str', required=False, aliases=["bpxfile", "bpxprm"]),
             backup=dict(type='str', required=False),
             tabcomment=dict(type='str', required=False),
-            unmount_opts=dict(type='str', default='NORMAL', choices=['DRAIN', 'FORCE', 'IMMEDIATE', 'NORMAL', 'REMOUNT', 'RESET'], required=False),
-            opts=dict(type='str', default='rw', choices=['ro', 'rw', 'same', 'nowait', 'nosecurity'], required=False),
+            unmount_opts=dict(type='str', default='NORMAL', choices=[
+                              'DRAIN', 'FORCE', 'IMMEDIATE', 'NORMAL', 'REMOUNT', 'RESET'], required=False),
+            opts=dict(type='str', default='rw', choices=[
+                      'ro', 'rw', 'same', 'nowait', 'nosecurity'], required=False),
             src_params=dict(type='str', required=False),
-            tag_flag=dict(type='str', default='', choices=['TEXT', 'NOTEXT'], required=False),
+            tag_flag=dict(type='str', default='', choices=[
+                          'TEXT', 'NOTEXT'], required=False),
             tag_ccsid=dict(type='int', required=False),
             allow_uids=dict(type='bool', default=True, required=False),
             sysname=dict(type='str', required=False),
-            automove=dict(type='str', default='AUTOMOVE', choices=["AUTOMOVE", "NOAUTOMOVE", "UNMOUNT"], required=False),
+            automove=dict(type='str', default='AUTOMOVE', choices=[
+                          "AUTOMOVE", "NOAUTOMOVE", "UNMOUNT"], required=False),
             automove_list=dict(type='str', required=False)
         ),
         add_file_common_args=True,
@@ -851,19 +859,25 @@ def main():
     arg_def = dict(
         src=dict(arg_type='data_set', required=True),
         path=dict(arg_type='path', required=True),
-        fstype=dict(arg_type='str', choices=["HFS", "zFS", "NFS", "TFS"], required=True),
-        state=dict(arg_type='str', default='mounted', choices=['absent', 'mounted', 'unmounted', 'present', 'remounted'], required=False),
-        fstab=dict(arg_type='str', default='', required=False),
+        fstype=dict(arg_type='str', choices=[
+                    "HFS", "zFS", "NFS", "TFS"], required=True),
+        state=dict(arg_type='str', default='mounted', choices=[
+                   'absent', 'mounted', 'unmounted', 'present', 'remounted'], required=False),
+        fstab=dict(arg_type='str', default='', required=False, aliases=["bpxfile", "bpxprm"]),
         backup=dict(arg_type='str', default='', required=False),
         tabcomment=dict(arg_type='str', default='', required=False),
-        unmount_opts=dict(arg_type='str', default='NORMAL', choices=['DRAIN', 'FORCE', 'IMMEDIATE', 'NORMAL', 'REMOUNT', 'RESET'], required=False),
-        opts=dict(arg_type='str', default='rw', choices=['ro', 'rw', 'same', 'nowait', 'nosecurity'], required=False),
+        unmount_opts=dict(arg_type='str', default='NORMAL', choices=[
+                          'DRAIN', 'FORCE', 'IMMEDIATE', 'NORMAL', 'REMOUNT', 'RESET'], required=False),
+        opts=dict(arg_type='str', default='rw', choices=[
+                  'ro', 'rw', 'same', 'nowait', 'nosecurity'], required=False),
         src_params=dict(arg_type='str', default='', required=False),
-        tag_flag=dict(arg_type='str', default='', choices=['TEXT', 'NOTEXT'], required=False),
+        tag_flag=dict(arg_type='str', default='', choices=[
+                      'TEXT', 'NOTEXT'], required=False),
         tag_ccsid=dict(arg_type='str', required=False),
         allow_uids=dict(arg_type='bool', default=True, required=False),
         sysname=dict(arg_type='str', default='', required=False),
-        automove=dict(arg_type='str', default='AUTOMOVE', choices=["AUTOMOVE", "NOAUTOMOVE", "UNMOUNT"], required=False),
+        automove=dict(arg_type='str', default='AUTOMOVE', choices=[
+                      "AUTOMOVE", "NOAUTOMOVE", "UNMOUNT"], required=False),
         automove_list=dict(arg_type='str', default='', required=False)
     )
 
