@@ -1,0 +1,76 @@
+###############################################################################
+# Copyright (c) IBM Corporation 2020
+###############################################################################
+
+###############################################################################
+# This sample playbook demonstrates using various modules included in the
+# Red Hat Ansible Certified Content for IBM Z core collection.
+#
+# Usage:
+#  ansible-playbook -i <inventory> <playbook>
+#
+# Example:
+#  ansible-playbook -i inventory zos-collection-sample.yaml
+#
+# Notes:
+#  This sample demonstrates various ways to perform tasks using Ansible z/OS
+#  core modules. Each module has options available on how automation can be
+#  controlled. This sample does not demonstrate all options; refer to
+#  the documentation or use ansible-doc to learn more about those options.
+#
+#  When running this playbook, review the comments on how this sample
+#  interacts with your target. Ensure that you have the required authority and
+#  permissions such as writing to the target directories or creating data sets.
+#
+#  Data sets created for this sample will follow the pattern
+#  <USER<.SOME.DATA.SET, where USER indicates the user who submits the playbook.
+#  The user is identified by the Ansible variable `ansible_user`.
+#
+#  Additional facts for this playbook can be configured to override the defaults
+#  by reviewing the "Fact setting" section of this playbook; for example,
+#  `data_set_name` and `system_name`.
+#
+# Requirements:
+#   IBM z/OS core collection 1.0.0 or later
+#   ZOAU 1.0.1 or later
+#
+# Configure:
+#   tgt_tmp_dir - this is the USS directory on the target which will be modified
+#                 for this example.
+#   ctl_tmp_dir - this is the directory on the controller which will be modified
+#                 for this example.
+# Optional:
+#   data_set_name - name of the data set that will be created during
+#                   execution of this sample.
+#   system_name - the system name that will be used during this example,
+#                 determined by executing `uname -n` on the target.
+#   job_name - the job name that will be used in this sample. If you
+#              change the HELLO.JCL job name, you must update this variable.
+###############################################################################
+
+---
+- hosts: all
+  collections:
+    - ibm.ibm_zos_core
+  gather_facts: no
+  vars:
+    tgt_tmp_dir: "/tmp"
+    ctl_tmp_dir: "/tmp"
+    job_name: "HELLO"
+
+  environment: "{{ environment_vars }}"
+
+  tasks:
+
+    - name: Unmount old super-share
+      zos_mount:
+        src: IMSTESTU.PYZ.V380.GA.ZFS
+        path: /python2
+        fstype: ZFS
+        state: unmounted
+      register: result
+
+    - name: Response for unmount
+      debug:
+        msg: "{{ result }}"
+
